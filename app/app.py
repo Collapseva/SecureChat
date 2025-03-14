@@ -12,21 +12,50 @@ from flask_migrate import Migrate
 import re
 import os
 from datetime import datetime, timezone
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger('werkzeug')
+logger.setLevel(logging.INFO)
+
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+
+connection_string = os.getenv("DATABASE_URL", "")
+if not connection_string:
+    print("Connection env not inited")
+    exit(1)
 
 app = Flask(__name__)
-app.secret_key = 'Redact_pls'  
 
-# Настройки базы данных
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.logger.addHandler(handler)
+app.logger.setLevel(logging.INFO)
+
+app.secret_key = os.getenv("SECRET_KEY", "")
+if not app.secret_key:
+    print("Secret key env not inited")
+    exit(1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = connection_string
 db = SQLAlchemy(app)
 
-# Инициализация Flask-Migrate
 migrate = Migrate(app, db)
 
-# Настройки загрузки файлов
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'xlsx'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 5,
+    'max_overflow': 10,
+    'pool_timeout': 30,
+    'pool_pre_ping': True
+}
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -34,13 +63,10 @@ if not os.path.exists(UPLOAD_FOLDER):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Инициализация SocketIO
-# socketio = SocketIO(app)
 socketio = SocketIO(
     app,
-    cors_allowed_origins="https://sequrechat.ru"  # или список ["https://sequrechat.ru"]
+    async_mode='eventlet'
 )
-# Настройки OAuth
 app.config['GOOGLE_CLIENT_ID'] = ''  
 app.config['GOOGLE_CLIENT_SECRET'] = ''  
 
@@ -66,7 +92,7 @@ USERNAME_REGEX = r'^[A-Z0-9_]+$'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), nullable=False, unique=True)
-    password_hash = db.Column(db.String(150), nullable=True)
+    password_hash = db.Column(db.String(400), nullable=True)
     oauth_provider = db.Column(db.String(50), nullable=True)
     oauth_id = db.Column(db.String(100), nullable=True)
     avatar_path = db.Column(db.String(200), nullable=True)
@@ -80,11 +106,10 @@ class User(UserMixin, db.Model):
             return check_password_hash(self.password_hash, password)
         return False
 
-# Модель группового или приватного чата
 class Chat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     is_group = db.Column(db.Boolean, default=False)
-    name = db.Column(db.String(150), nullable=True)  # Имя группы, если это групповой чат
+    name = db.Column(db.String(150), nullable=True)
     messages = db.relationship('Message', backref='chat', lazy='dynamic')
     memberships = db.relationship('ChatMembership', backref='chat', lazy='dynamic')
 
@@ -107,7 +132,7 @@ class ChatInvitation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     from_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     to_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=True)  # Для групповых чатов
+    chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'), nullable=True)
     status = db.Column(db.String(20), default='pending')
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     from_user = db.relationship('User', foreign_keys=[from_user_id], backref='sent_invitations')
@@ -133,12 +158,12 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # все чаты, в которых участвует текущий пользователь
+  
     memberships = ChatMembership.query.filter_by(user_id=current_user.id).all()
     chats = [m.chat for m in memberships]
 
-    # Рассчитать количество непрочитанных сообщений
-    # Для упрощения храним последнее прочтение в сессии
+  
+  
     chats_with_unread = []
     for chat in chats:
         last_read_time = session.get(f'last_read_{chat.id}_{current_user.id}', datetime.now(timezone.utc).replace(tzinfo=None))
@@ -147,13 +172,13 @@ def dashboard():
             Message.timestamp > last_read_time,
             Message.sender_id != current_user.id
         ).count()
-        # Добавляем поле unread_counts
+      
         if not hasattr(chat, 'unread_counts'):
             chat.unread_counts = {}
         chat.unread_counts[current_user.id] = unread_count
         chats_with_unread.append(chat)
 
-    # Получить входящие приглашения
+  
     invitations = ChatInvitation.query.filter_by(to_user_id=current_user.id, status='pending').all()
     error = request.args.get('error')
     message = request.args.get('message')
@@ -169,10 +194,14 @@ def register():
             error = 'Имя пользователя может содержать только заглавные английские буквы, цифры и нижнее подчёркивание.'
             return render_template('register.html', error=error)
          
+        logger.info("PON 1")
+
         if User.query.filter_by(username=username).first():
             error = 'Пользователь с таким именем уже существует.'
             return render_template('register.html', error=error)
          
+
+        logger.info("PON 2")
         new_user = User(username=username)
         new_user.set_password(password)
         db.session.add(new_user)
@@ -244,19 +273,19 @@ def send_invitation():
 
     user = User.query.filter_by(username=username).first()
     if user:
-        # Проверяем, создаём ли мы приглашение в уже существующий групповой чат
+      
         if chat_id:
             chat = Chat.query.get(chat_id)
             if not chat or not chat.is_group:
                 error = 'Неверный чат для приглашения.'
                 return redirect(url_for('dashboard', error=error))
-            # Проверяем, что отправитель - участник группы
+          
             membership = ChatMembership.query.filter_by(chat_id=chat_id, user_id=current_user.id).first()
             if not membership:
                 error = 'Вы не являетесь участником данного чата.'
                 return redirect(url_for('dashboard', error=error))
             
-            # Проверяем, не является ли пользователь уже участником чата
+          
             existing_membership = ChatMembership.query.filter_by(chat_id=chat_id, user_id=user.id).first()
             if existing_membership:
                 error = 'Пользователь уже в чате.'
@@ -271,25 +300,29 @@ def send_invitation():
             invitation = ChatInvitation(from_user_id=current_user.id, to_user_id=user.id, chat_id=chat_id)
             db.session.add(invitation)
             db.session.commit()
+
             socketio.emit('new_invitation', {
                 'from_username': current_user.username,
-                'invitation_id': invitation.id
+                'invitation_id': invitation.id,
+                'timestamp': invitation.timestamp.strftime('%d.%m.%Y %H:%M'),
+                'chat_name': invitation.chat.name,
             }, room=f'user_{user.id}')
+            
             message = 'Приглашение в групповй чат отправлено.'
             return redirect(url_for('dashboard', message=message))
 
         else:
-            # Приватный чат
+          
             existing_invitation = ChatInvitation.query.filter_by(
                 from_user_id=current_user.id, to_user_id=user.id, status='pending', chat_id=None).first()
 
-            # Проверка на существующий чат 1-на-1
+          
             existing_chat = None
-            # Проверим все чаты, в которых current_user состоит, ищем чат без is_group=False и с user-ом
+          
             for m in current_user.chat_memberships:
                 c = m.chat
                 if not c.is_group:
-                    # Проверим, является ли user участником
+                  
                     other_mem = ChatMembership.query.filter_by(chat_id=c.id, user_id=user.id).first()
                     if other_mem:
                         existing_chat = c
@@ -305,10 +338,14 @@ def send_invitation():
             invitation = ChatInvitation(from_user_id=current_user.id, to_user_id=user.id)
             db.session.add(invitation)
             db.session.commit()
+
             socketio.emit('new_invitation', {
                 'from_username': current_user.username,
-                'invitation_id': invitation.id
+                'invitation_id': invitation.id,
+                'timestamp': invitation.timestamp.strftime('%d.%m.%Y %H:%M'),
+                'chat_name': "Приватный чат",
             }, room=f'user_{user.id}')
+            
             message = 'Приглашение отправлено.'
             return redirect(url_for('dashboard', message=message))
     else:
@@ -323,33 +360,25 @@ def accept_invitation(invitation_id):
         abort(403)
     invitation.status = 'accepted'
     if invitation.chat_id:
-        # Это приглашение в группу
+      
         chat = invitation.chat
         if not chat:
             abort(404)
-        # Добавляем пользователя в групповой чат
+      
         membership = ChatMembership(chat_id=chat.id, user_id=current_user.id)
         db.session.add(membership)
         db.session.commit()
-        socketio.emit('invitation_accepted', {
-            'to_username': current_user.username,
-            'chat_id': chat.id
-        }, room=f'user_{invitation.from_user_id}')
     else:
-        # Приватный чат
+      
         chat = Chat(is_group=False)
         db.session.add(chat)
         db.session.commit()
-        # Добавляем обоих участников
+      
         membership1 = ChatMembership(chat_id=chat.id, user_id=invitation.from_user_id)
         membership2 = ChatMembership(chat_id=chat.id, user_id=invitation.to_user_id)
         db.session.add(membership1)
         db.session.add(membership2)
         db.session.commit()
-        socketio.emit('invitation_accepted', {
-            'to_username': current_user.username,
-            'chat_id': chat.id
-        }, room=f'user_{invitation.from_user_id}')
 
     return redirect(url_for('dashboard'))
 
@@ -370,18 +399,18 @@ def decline_invitation(invitation_id):
 @login_required
 def chat_view(chat_id):
     chat = Chat.query.get_or_404(chat_id)
-    # Проверим членство
+  
     membership = ChatMembership.query.filter_by(chat_id=chat_id, user_id=current_user.id).first()
     if not membership:
         abort(403)
-    # Получить все сообщения
+  
     messages = chat.messages.order_by(Message.timestamp.asc()).all()
     session[f'last_read_{chat.id}_{current_user.id}'] = datetime.now(timezone.utc).replace(tzinfo=None)
-    # Определим название чата (для приватного чата можно выводить имя собеседника)
+  
     if chat.is_group:
         chat_name = chat.name if chat.name else "Групповой чат"
     else:
-        # Найдём собеседника
+      
         memberships = ChatMembership.query.filter_by(chat_id=chat.id).all()
         other_user = None
         for m in memberships:
@@ -392,7 +421,6 @@ def chat_view(chat_id):
 
     return render_template('chat.html', chat=chat, messages=messages, chat_name=chat_name)
 
-# Отправка сообщения через AJAX
 @app.route('/send_message', methods=['POST'])
 @login_required
 def ajax_send_message():
@@ -400,7 +428,7 @@ def ajax_send_message():
     content = request.form.get('message', '')
     file = request.files.get('file')
 
-    chat = Chat.query.get(chat_id)
+    chat = db.session.get(Chat, chat_id)
     if not chat:
         return {'error': 'Chat not found'}, 400
     membership = ChatMembership.query.filter_by(chat_id=chat_id, user_id=current_user.id).first()
@@ -420,7 +448,7 @@ def ajax_send_message():
     db.session.add(message)
     db.session.commit()
 
-    # Отправляем событие другим участникам
+  
     chat_members = ChatMembership.query.filter_by(chat_id=chat_id).all()
     for member in chat_members:
         if member.user_id != current_user.id:
@@ -429,7 +457,7 @@ def ajax_send_message():
                 'from_username': current_user.username,
                 'content': content.strip(),
                 'file_path': file_path,
-                'timestamp': message.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                'timestamp': message.timestamp.strftime('%H:%M')
             }, room=f'user_{member.user_id}')
 
     return {
@@ -438,7 +466,7 @@ def ajax_send_message():
         'from_username': current_user.username,
         'content': content.strip(),
         'file_path': file_path,
-        'timestamp': message.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        'timestamp': message.timestamp.strftime('%H:%M')
     }
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -485,7 +513,7 @@ def handle_connect():
         join_room(f'user_{current_user.id}')
         print(f'User {current_user.username} connected to room user_{current_user.id}')
     else:
-        disconnect()
+        pass
         
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -496,4 +524,4 @@ def handle_disconnect():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    socketio.run(app, host='0.0.0.0', port=8000, debug=False)
+    socketio.run(app, host='0.0.0.0', port=8000, debug=False, allow_unsafe_werkzeug=True)

@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SecureChat{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-    <script src="{{ url_for('static', filename='socket.js') }}"></script>
     <style>
         /* Minimalistic Black and Violet Styling */
         * {
@@ -34,6 +32,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative; /* Ensures absolute positioning of menu works within nav */
         }
 
         .logo {
@@ -49,12 +48,13 @@
             font-size: 24px;
         }
 
-        .menu-toggle {
+        /* Hide the checkbox visually but keep it functional */
+        #menu-toggle {
             display: none;
         }
 
         .hamburger {
-            display: none;
+            display: none; /* Hidden by default, shown on mobile */
         }
 
         .menu {
@@ -77,12 +77,6 @@
             color: #DDA0DD; /* Lighter violet for hover */
         }
 
-        main {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
         /* Responsive Design */
         @media (max-width: 768px) {
             .hamburger {
@@ -100,30 +94,33 @@
             }
 
             .menu {
-                display: none;
+                display: none; /* Hidden by default on mobile */
                 position: absolute;
-                top: 60px;
-                right: 20px;
+                top: 100%; /* Position below the nav */
+                right: 0; /* Align to the right */
                 background: #1A1A1A;
                 flex-direction: column;
                 padding: 20px;
                 border-radius: 5px;
                 border: 1px solid #8A2BE2;
+                z-index: 10; /* Ensure it appears above other content */
             }
 
-            .menu-toggle:checked ~ .menu {
+            /* Show menu when checkbox is checked */
+            #menu-toggle:checked ~ .menu {
                 display: flex;
             }
 
-            .menu-toggle:checked + .hamburger span:nth-child(1) {
+            /* Hamburger animation when checked */
+            #menu-toggle:checked + .hamburger span:nth-child(1) {
                 transform: rotate(45deg) translate(5px, 5px);
             }
 
-            .menu-toggle:checked + .hamburger span:nth-child(2) {
+            #menu-toggle:checked + .hamburger span:nth-child(2) {
                 opacity: 0;
             }
 
-            .menu-toggle:checked + .hamburger span:nth-child(3) {
+            #menu-toggle:checked + .hamburger span:nth-child(3) {
                 transform: rotate(-45deg) translate(7px, -7px);
             }
         }
@@ -161,5 +158,8 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+    <script src="{{ url_for('static', filename='messaging.js') }}"></script>
+    <script src="{{ url_for('static', filename='socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='socket.js') }}"></script>
 </body>
 </html>

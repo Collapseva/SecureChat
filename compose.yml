@@ -1,0 +1,38 @@
+---
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/mydb
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    networks:
+      - postgres
+    command: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:8000 app:app
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432"
+    networks:
+      - postgres
+
+volumes:
+  postgres-data:
+
+networks:
+  postgres:
+    driver: bridge
