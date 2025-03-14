@@ -1,0 +1,476 @@
+/* Сброс стилей */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Основные стили */
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f0f0f;
+    color: #e0e0e0;
+    line-height: 1.6;
+}
+
+/* Навигация */
+header nav {
+    background: #121212;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    border-bottom: 1px solid #252525;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    color: #7c4dff;
+}
+
+.logo i {
+    font-size: 1.8rem;
+}
+
+/* Меню */
+.menu {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+    margin-left: auto;
+}
+
+.menu a {
+    color: #e0e0e0;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.menu a:hover {
+    background: #7c4dff20;
+    color: #7c4dff;
+}
+
+/* Основной контент */
+main {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard, .chat {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 2rem;
+    border: 1px solid #252525;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+
+/* Кнопки */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #7c4dff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.btn:hover {
+    background: #5e35b1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.btn.google {
+    background: #DB4437;
+}
+
+.btn.google:hover {
+    background: #B3362B;
+}
+
+/* Сообщения чата */
+.messages {
+    background: #121212;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.message {
+    margin: 1rem 0;
+    display: flex;
+    gap: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.timestamp {
+    font-size: 0.75rem;
+    color: #888;
+    align-self: flex-end;
+}
+
+.message p {
+    padding: 0.75rem 1.25rem;
+    max-width: 70%;
+    line-height: 1.4;
+    word-wrap: break-word; /* Перенос длинных слов */
+    white-space: pre-wrap; /* Сохранять переносы строк */
+    margin: 0; /* Убрать дефолтные отступы */
+}
+
+.message-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 100%;
+}
+
+.message.incoming p {
+    background: #252525;
+    border-radius: 12px 12px 12px 4px;
+}
+
+.message.outgoing {
+    flex-direction: row-reverse;
+}
+
+.message.outgoing p {
+    background: #7c4dff;
+    border-radius: 12px 12px 4px 12px;
+}
+
+/* static/style.css */
+.message.incoming .message-content {
+    align-items: flex-start;
+}
+
+.message.outgoing .message-content {
+    align-items: flex-end;
+}
+
+.message.incoming p {
+    background: #252525;
+    border-radius: 12px 12px 12px 4px;
+    margin-right: auto; /* Фиксируем позицию слева */
+}
+
+.message.outgoing p {
+    background: #7c4dff;
+    border-radius: 12px 12px 4px 12px;
+    margin-left: auto; /* Фиксируем позицию справа */
+}
+
+/* static/style.css */
+.messages {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.message {
+    max-width: 80%;
+    width: fit-content;
+}
+/* Формы */
+form input[type="text"],
+form input[type="password"],
+form textarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: #252525;
+    border: 1px solid #353535;
+    border-radius: 8px;
+    color: white;
+    margin: 0.5rem 0;
+}
+
+form input:focus,
+form textarea:focus {
+    outline: 2px solid #7c4dff;
+    border-color: transparent;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gradientChange {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+    main {
+        padding: 1rem;
+    }
+    
+    .dashboard, .chat {
+        width: 100%;
+        padding: 1rem;
+    }
+    
+    .menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #121212;
+        flex-direction: column;
+        padding: 1rem;
+    }
+    
+    .hamburger {
+        display: block;
+    }
+    
+    #menu-toggle:checked ~ .menu {
+        display: flex;
+    }
+}
+/* Новая структура макета */
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 2rem;
+    min-height: calc(100vh - 100px);
+}
+
+.chats-sidebar {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 1.5rem;
+    height: fit-content;
+    position: sticky;
+    top: 1rem;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Стили боковой панели */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.chats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.chat-item {
+    position: relative;
+}
+
+.chat-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background: #252525;
+    transition: all 0.2s;
+}
+
+.chat-link:hover {
+    background: #7c4dff20;
+    transform: translateX(5px);
+}
+
+.chat-icon {
+    font-size: 1.2rem;
+    color: #7c4dff;
+}
+
+.chat-info {
+    flex-grow: 1;
+}
+
+.chat-title {
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.chat-meta {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.unread-badge {
+    background: #ff4081;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .chats-sidebar {
+        position: static;
+    }
+}
+/* Добавим адаптацию для больших экранов */
+@media (min-width: 1600px) {
+    .dashboard-container {
+        grid-template-columns: 360px 1fr;
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .chats-sidebar {
+        padding: 2rem;
+    }
+
+    .chat-link {
+        padding: 1.2rem;
+        gap: 1.2rem;
+    }
+
+    .chat-title {
+        font-size: 1.1rem;
+    }
+
+    .chat-meta {
+        font-size: 0.9rem;
+    }
+
+    .invite-section,
+    .invitations-section {
+        padding: 2rem;
+    }
+
+    .btn {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+
+    .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+
+/* Улучшим общую структуру */
+.dashboard-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.main-content {
+    gap: 2rem;
+    padding: 1rem 0;
+}
+
+.card {
+    border-radius: 16px;
+    background: #1a1a1a;
+    padding: 1.5rem;
+    border: 1px solid #2e2e2e;
+}
+
+/* Увеличим плотность информации */
+.chat-info {
+    min-width: 0; /* Исправление для обрезания длинных текстов */
+}
+
+.chat-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.invitation-details {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* Адаптивные карточки */
+.invitation-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.2rem;
+}
+
+.invitation-actions {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: nowrap;
+}
+/* Для экранов сверхбольших разрешений */
+@media (min-width: 2000px) {
+    .dashboard-container {
+        max-width: 1800px;
+        grid-template-columns: 400px 1fr;
+    }
+
+    .chats-sidebar {
+        padding: 2.5rem;
+    }
+
+    .chat-link {
+        padding: 1.5rem;
+    }
+
+    .card {
+        padding: 2rem;
+    }
+
+    .invitation-card {
+        padding: 1.5rem;
+    }
+}
+
+/* Оптимизация промежуточных размеров */
+@media (min-width: 1200px) and (max-width: 1599px) {
+    .dashboard-container {
+        grid-template-columns: 320px 1fr;
+    }
+
+    .chat-link {
+        padding: 1rem;
+    }
+
+    .btn {
+        padding: 0.8rem 1.5rem;
+    }
+}

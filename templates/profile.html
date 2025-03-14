@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Профиль {{ user.username }}</h1>
+    <form action="" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <textarea name="description" placeholder="Описание...">{{ user.description }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="avatar" class="file-upload">
+                <i class="fas fa-camera"></i> Выбрать аватар
+                <input type="file" id="avatar" name="avatar" accept="image/*" hidden>
+            </label>
+            {% if user.avatar_path %}
+                <img src="{{ url_for('uploaded_file', filename=user.avatar_path) }}" alt="Аватар" class="avatar-preview">
+            {% endif %}
+        </div>
+        <button type="submit" class="btn">Сохранить</button>
+    </form>
+</div>
+
+<style>
+    /* Minimalistic Black and Violet Styling */
+    .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #1A1A1A;
+        border-radius: 5px;
+    }
+
+    h1 {
+        font-size: 20px;
+        font-weight: 400;
+        color: #8A2BE2;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    textarea {
+        background: #000000;
+        border: 1px solid #8A2BE2;
+        border-radius: 5px;
+        padding: 10px;
+        color: #D3D3D3;
+        font-size: 16px;
+        font-family: 'Inter', sans-serif;
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    textarea:focus {
+        outline: none;
+        border-color: #DDA0DD;
+    }
+
+    textarea::placeholder {
+        color: #A9A9A9;
+    }
+
+    .file-upload {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #8A2BE2;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .file-upload:hover {
+        color: #DDA0DD;
+    }
+
+    .avatar-preview {
+        max-width: 100px;
+        border-radius: 50%;
+        margin-top: 10px;
+        border: 1px solid #8A2BE2;
+    }
+
+    .btn {
+        background: #8A2BE2;
+        border: none;
+        color: #D3D3D3;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        text-align: center;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .btn:hover {
+        background: #DDA0DD;
+    }
+</style>
+
+<script>
+    // Auto-resize textarea
+    document.addEventListener('DOMContentLoaded', () => {
+        const textarea = document.querySelector('textarea');
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+    });
+
+    document.querySelector('textarea').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+</script>
+{% endblock %}

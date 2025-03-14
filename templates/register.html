@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+{% block title %}Регистрация{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Регистрация</h1>
+    <form action="" method="post">
+        <div class="form-group">
+            <input type="text" name="username" placeholder="Имя пользователя (заглавные буквы, цифры, _)" required>
+        </div>
+        <div class="form-group">
+            <input type="password" name="password" placeholder="Пароль" required>
+        </div>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        <button type="submit" class="btn">Зарегистрироваться</button>
+    </form>
+    <p>Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></p>
+</div>
+
+<style>
+    /* Minimalistic Black and Violet Styling */
+    .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #1A1A1A;
+        border-radius: 5px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 20px;
+        font-weight: 400;
+        color: #8A2BE2;
+        margin-bottom: 20px;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+        background: #000000;
+        border: 1px solid #8A2BE2;
+        border-radius: 5px;
+        padding: 10px;
+        color: #D3D3D3;
+        font-size: 16px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+        outline: none;
+        border-color: #DDA0DD;
+    }
+
+    input[type="text"]::placeholder,
+    input[type="password"]::placeholder {
+        color: #A9A9A9;
+    }
+
+    .error {
+        font-size: 14px;
+        color: #DDA0DD; /* Lighter violet for error text */
+        background: #2A0040; /* Subtle violet background */
+        padding: 10px;
+        border-radius: 5px;
+        margin: 0;
+    }
+
+    .btn {
+        background: #8A2BE2;
+        border: none;
+        color: #D3D3D3;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .btn:hover {
+        background: #DDA0DD;
+    }
+
+    p {
+        font-size: 14px;
+        color: #A9A9A9;
+        margin-top: 20px;
+    }
+
+    p a {
+        color: #8A2BE2;
+        text-decoration: none;
+    }
+
+    p a:hover {
+        color: #DDA0DD;
+    }
+</style>
+{% endblock %}

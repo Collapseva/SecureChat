@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+{% block title %}{{ chat_name }}{% endblock %}
+
+{% block content %}
+<main>
+    <div class="chat">
+        <div class="chat-header">
+            <h1>{{ chat_name }}</h1>
+            <a href="{{ url_for('dashboard') }}" class="btn">
+                <i class="fas fa-arrow-left"></i>Назад
+            </a>
+        </div>
+
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {% if message.sender_id == current_user.id %}outgoing{% else %}incoming{% endif %}">
+                <div class="message-content">
+                    
+                    {% if message.content %}
+                        <p>{{ message.content }}</p>
+                    {% endif %}
+        
+                    {% if message.file_path %}
+                        <div class="file-preview">
+                            {% if message.file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                                <img src="{{ url_for('uploaded_file', filename=message.file_path) }}" 
+                                    alt="Изображение" 
+                                    class="message-image">
+                            {% else %}
+                                <a href="{{ url_for('uploaded_file', filename=message.file_path) }}" 
+                                download 
+                                class="btn">
+                                    <i class="fas fa-download"></i>Скачать файл
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if message.content %}
+                        <p>{{ message.content }}</p>
+                    {% endif %}
+                    
+                    <span class="timestamp">
+                        {{ message.timestamp | datetimeformat('%H:%M') }} | 
+                        {{ message.sender.username }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <form id="messageForm" enctype="multipart/form-data">
+            <div class="input-group">
+                <textarea name="message" 
+                          placeholder="Напишите сообщение..." 
+                          rows="1"></textarea>
+                <label class="file-upload">
+                    <input type="file" name="file" hidden>
+                    <i class="fas fa-paperclip"></i>
+                </label>
+                <button type="submit" class="btn send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <input type="hidden" name="chat_id" value="{{ chat.id }}">
+        </form>
+    </div>
+</main>
+
+<script>
+    // Автоматическая прокрутка к новым сообщениям
+    // templates/chat.html
+    window.addEventListener('DOMContentLoaded', () => {
+        const messagesDiv = document.querySelector('.messages');
+        if (messagesDiv) {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    });
+    
+    // Автоматическое увеличение высоты textarea
+    document.querySelector('textarea').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.querySelector('textarea');
+    if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+    
+    // Принудительный рефлоу для старых браузеров
+    setTimeout(() => {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }, 50);
+    });
+</script>
+{% endblock %}

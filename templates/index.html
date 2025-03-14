@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 id="wk">Добро пожаловать!</h1>
+    <div class="button-group">
+        <a href="{{ url_for('login') }}" class="btn">Войти</a>
+        <a href="{{ url_for('register') }}" class="btn">Зарегистрироваться</a>
+    </div>
+    <p>Или используйте аккаунт Google для входа:</p>
+    <a href="{{ url_for('login_google') }}" class="btn google">Войти через Google</a>
+</div>
+
+<style>
+    /* Minimalistic Black and Violet Styling */
+    .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #1A1A1A;
+        border-radius: 5px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 20px;
+        font-weight: 400;
+        color: #8A2BE2;
+        margin-bottom: 20px;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    p {
+        font-size: 14px;
+        color: #A9A9A9;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        background: #8A2BE2;
+        border: none;
+        color: #D3D3D3;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        text-decoration: none;
+        font-family: 'Inter', sans-serif;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background: #DDA0DD;
+    }
+
+    .btn.google {
+        background: #2A0040; /* Subtle violet for Google button */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 20px;
+    }
+
+    .btn.google:hover {
+        background: #4B0073; /* Slightly lighter violet for hover */
+    }
+</style>
+{% endblock %}

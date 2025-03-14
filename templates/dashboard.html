@@ -1,0 +1,436 @@
+{% extends "layout.html" %}
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<main class="dashboard-container">
+    <!-- Левая колонка с чатами -->
+    <aside class="chats-sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-comments"></i> Мои чаты</h2>
+            <a href="{{ url_for('create_group') }}" class="btn icon-btn">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+
+        <div class="chats-list-wrapper">
+            {% if chats %}
+            <ul class="chats-list">
+                {% for chat in chats %}
+                <li class="chat-item">
+                    <a href="{{ url_for('chat_view', chat_id=chat.id) }}" class="chat-link">
+                        <div class="chat-icon">
+                            {% if chat.is_group %}
+                                <i class="fas fa-users"></i>
+                            {% else %}
+                                <i class="fas fa-user-friends"></i>
+                            {% endif %}
+                        </div>
+                        <div class="chat-info">
+                            <h3 class="chat-title">
+                                {% if chat.is_group %}
+                                    {{ chat.name|default("Группа", true) }}
+                                {% else %}
+                                    {% for m in chat.memberships %}
+                                        {% if m.user_id != current_user.id %}
+                                            {{ m.user.username }}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </h3>
+                            <span class="chat-meta">
+                                {% if chat.is_group %}
+                                    {{ chat.memberships.count() }} участников
+                                {% else %}
+                                    Приватный чат
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if chat.unread_counts.get(current_user.id, 0) > 0 %}
+                        <span class="unread-badge">
+                            {{ chat.unread_counts.get(current_user.id, 0) }}
+                        </span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-comment-slash"></i>
+                <p>Нет активных чатов</p>
+            </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- Правая основная область -->
+    <div class="main-content">
+        <!-- Форма приглашения -->
+        <section class="invite-section card">
+            <h2><i class="fas fa-user-plus"></i> Новое приглашение</h2>
+            <form class="invite-form" action="{{ url_for('send_invitation') }}" method="post">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="username"><i class="fas fa-at"></i> Имя пользователя</label>
+                        <input type="text" 
+                               id="username"
+                               name="username" 
+                               placeholder="USER_NAME"
+                               pattern="[A-Z0-9_]+"
+                               required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="chat_id"><i class="fas fa-comments"></i> Выбрать чат</label>
+                        <select id="chat_id" name="chat_id" class="chat-select">
+                            <option value="">Новый чат</option>
+                            {% for chat in chats if chat.is_group %}
+                            <option value="{{ chat.id }}">
+                                {{ chat.name|default("Группа #" + chat.id|string) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn full-width">
+                    <i class="fas fa-paper-plane"></i> Отправить приглашение
+                </button>
+            </form>
+        </section>
+
+        <!-- Список приглашений -->
+        <section class="invitations-section card">
+            <h2><i class="fas fa-envelope"></i> Входящие приглашения</h2>
+            {% if invitations %}
+            <div class="invitations-list">
+                {% for invitation in invitations %}
+                <div class="invitation-card">
+                    <div class="invitation-header">
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="invitation-details">
+                            <h3>От {{ invitation.from_user.username }}</h3>
+                            <span class="timestamp">
+                                {{ invitation.timestamp|datetimeformat('%d.%m.%Y %H:%M') }}
+                            </span>
+                            {% if invitation.chat %}
+                            <span class="chat-info">
+                                <i class="fas fa-comments"></i>
+                                {{ invitation.chat.name|default("Групповой чат", true) }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="invitation-actions">
+                        <form action="{{ url_for('accept_invitation', invitation_id=invitation.id) }}" method="post">
+                            <button type="submit" class="btn success">
+                                <i class="fas fa-check"></i> Принять
+                            </button>
+                        </form>
+                        <form action="{{ url_for('decline_invitation', invitation_id=invitation.id) }}" method="post">
+                            <button type="submit" class="btn danger">
+                                <i class="fas fa-times"></i> Отклонить
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-envelope-open"></i>
+                <p>Нет новых приглашений</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</main>
+
+<style>
+    /* Minimalistic Black and Violet Styling */
+    .dashboard-container {
+        display: flex;
+        gap: 20px;
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+
+    .chats-sidebar {
+        width: 30%;
+        background: #1A1A1A;
+        border-radius: 5px;
+        padding: 20px;
+    }
+
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .sidebar-header h2 {
+        font-size: 20px;
+        font-weight: 400;
+        color: #8A2BE2;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn.icon-btn {
+        background: none;
+        border: none;
+        color: #8A2BE2;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .btn.icon-btn:hover {
+        color: #DDA0DD;
+    }
+
+    .chats-list-wrapper {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .chats-list-wrapper::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chats-list-wrapper::-webkit-scrollbar-thumb {
+        background: #8A2BE2;
+        border-radius: 3px;
+    }
+
+    .chats-list {
+        list-style: none;
+    }
+
+    .chat-item {
+        margin: 10px 0;
+    }
+
+    .chat-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: #D3D3D3;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .chat-link:hover {
+        background: #2A0040;
+    }
+
+    .chat-icon i {
+        font-size: 18px;
+        color: #8A2BE2;
+    }
+
+    .chat-info {
+        flex-grow: 1;
+    }
+
+    .chat-title {
+        font-size: 16px;
+        font-weight: 400;
+        margin: 0;
+    }
+
+    .chat-meta {
+        font-size: 12px;
+        color: #A9A9A9;
+    }
+
+    .unread-badge {
+        background: #8A2BE2;
+        color: #D3D3D3;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 50%;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: #A9A9A9;
+        padding: 20px;
+    }
+
+    .empty-state i {
+        font-size: 24px;
+        color: #8A2BE2;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .main-content {
+        width: 70%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .card {
+        background: #1A1A1A;
+        border-radius: 5px;
+        padding: 20px;
+    }
+
+    .card h2 {
+        font-size: 20px;
+        font-weight: 400;
+        color: #8A2BE2;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .invite-form .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form-group label {
+        font-size: 14px;
+        color: #8A2BE2;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .form-group input,
+    .form-group select {
+        background: #000000;
+        border: 1px solid #8A2BE2;
+        border-radius: 5px;
+        padding: 10px;
+        color: #D3D3D3;
+        font-size: 16px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #DDA0DD;
+    }
+
+    .btn.full-width {
+        background: #8A2BE2;
+        border: none;
+        color: #D3D3D3;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .btn.full-width:hover {
+        background: #DDA0DD;
+    }
+
+    .invitations-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .invitation-card {
+        background: #2A0040;
+        padding: 15px;
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .invitation-header {
+        display: flex;
+        gap: 10px;
+    }
+
+    .user-avatar i {
+        font-size: 24px;
+        color: #8A2BE2;
+    }
+
+    .invitation-details h3 {
+        font-size: 16px;
+        font-weight: 400;
+        margin: 0;
+        color: #D3D3D3;
+    }
+
+    .timestamp,
+    .chat-info {
+        font-size: 12px;
+        color: #A9A9A9;
+        display: block;
+    }
+
+    .chat-info i {
+        margin-right: 5px;
+    }
+
+    .invitation-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn.success {
+        background: #8A2BE2;
+        border: none;
+        color: #D3D3D3;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn.danger {
+        background: none;
+        border: 1px solid #8A2BE2;
+        color: #8A2BE2;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn.success:hover {
+        background: #DDA0DD;
+    }
+
+    .btn.danger:hover {
+        color: #DDA0DD;
+        border-color: #DDA0DD;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            flex-direction: column;
+        }
+
+        .chats-sidebar,
+        .main-content {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

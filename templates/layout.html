@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SecureChat{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='socket.js') }}"></script>
+    <style>
+        /* Minimalistic Black and Violet Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            color: #D3D3D3;
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        header {
+            padding: 20px;
+            border-bottom: 1px solid #8A2BE2;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 400;
+            color: #8A2BE2;
+        }
+
+        .logo i {
+            font-size: 24px;
+        }
+
+        .menu-toggle {
+            display: none;
+        }
+
+        .hamburger {
+            display: none;
+        }
+
+        .menu {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+        }
+
+        .menu li a {
+            color: #8A2BE2;
+            text-decoration: none;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+        }
+
+        .menu li a:hover {
+            color: #DDA0DD; /* Lighter violet for hover */
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+                cursor: pointer;
+            }
+
+            .hamburger span {
+                display: block;
+                width: 25px;
+                height: 3px;
+                background: #8A2BE2;
+                margin: 5px 0;
+                transition: all 0.3s ease;
+            }
+
+            .menu {
+                display: none;
+                position: absolute;
+                top: 60px;
+                right: 20px;
+                background: #1A1A1A;
+                flex-direction: column;
+                padding: 20px;
+                border-radius: 5px;
+                border: 1px solid #8A2BE2;
+            }
+
+            .menu-toggle:checked ~ .menu {
+                display: flex;
+            }
+
+            .menu-toggle:checked + .hamburger span:nth-child(1) {
+                transform: rotate(45deg) translate(5px, 5px);
+            }
+
+            .menu-toggle:checked + .hamburger span:nth-child(2) {
+                opacity: 0;
+            }
+
+            .menu-toggle:checked + .hamburger span:nth-child(3) {
+                transform: rotate(-45deg) translate(7px, -7px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fab fa-rocketchat"></i>
+                <span>SecureChat</span>
+            </div>
+            
+            <input type="checkbox" id="menu-toggle">
+            <label for="menu-toggle" class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </label>
+            
+            <ul class="menu">
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i>Главная</a></li>
+                    <li><a href="{{ url_for('create_group') }}"><i class="fas fa-users"></i>Создать группу</a></li>
+                    <li><a href="{{ url_for('profile') }}"><i class="fas fa-user"></i>Профиль</a></li>
+                    <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i>Выход</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i>Вход</a></li>
+                    <li><a href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i>Регистрация</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
