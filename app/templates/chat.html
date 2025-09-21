@@ -15,8 +15,16 @@
             {% for message in messages %}
             <div class="message {% if message.sender_id == current_user.id %}outgoing{% else %}incoming{% endif %}">
                 <div class="message-content">
-                    {% if message.content %}
-                        <p>{{ message.content }}</p>
+                    {% if message.content or message.content_sender %}
+                        {% if message.is_encrypted %}
+                            {% if message.sender_id == current_user.id %}
+                                <p class="encrypted" data-content="{{ message.content_sender }}">{{ message.content_sender }}</p>
+                            {% else %}
+                                <p class="encrypted" data-content="{{ message.content }}">{{ message.content }}</p>
+                            {% endif %}
+                        {% else %}
+                            <p>{{ message.content }}</p>
+                        {% endif %}
                     {% endif %}
         
                     {% if message.file_path %}
@@ -214,6 +222,26 @@
         setTimeout(() => {
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }, 50);
+    });
+</script>
+
+<script>
+    const otherUserId = {{ other_user_id|tojson }};
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const encryptedMessages = document.querySelectorAll('.encrypted');
+        for (const msgElement of encryptedMessages) {
+            const ciphertext = msgElement.dataset.content;
+            if (ciphertext) {
+                const plaintext = decryptMessage(ciphertext);
+                if (plaintext) {
+                    msgElement.textContent = plaintext;
+                } else {
+                    msgElement.textContent = "[Не удалось расшифровать сообщение]";
+                    msgElement.style.color = 'red';
+                }
+            }
+        }
     });
 </script>
 {% endblock %}

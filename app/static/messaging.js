@@ -12,9 +12,33 @@ function escapeHtml(input) {
 document.addEventListener('DOMContentLoaded', () => {
     const messageForm = document.getElementById('messageForm');
     if (messageForm) {
-        messageForm.addEventListener('submit', (e) => {
+        messageForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(messageForm);
+            const content = formData.get('message');
+
+            // Encrypt message if in a private chat
+            if (typeof otherUserId !== 'undefined' && otherUserId) {
+                const recipientPublicKey = await fetchUserPublicKey(otherUserId);
+                const { publicKey: senderPublicKey } = await getKeys();
+
+                if (recipientPublicKey && senderPublicKey) {
+                    const encryptedForRecipient = encryptMessage(content, recipientPublicKey);
+                    const encryptedForSender = encryptMessage(content, senderPublicKey);
+                    
+                    if (encryptedForRecipient && encryptedForSender) {
+                        formData.set('message', encryptedForRecipient);
+                        formData.append('message_sender', encryptedForSender);
+                    } else {
+                        alert('Не удалось зашифровать сообщение.');
+                        return;
+                    }
+                } else {
+                    alert('Не удалось получить ключ шифрования для пользователя. Сообщение не будет отправлено.');
+                    return;
+                }
+            }
+
             fetch('/send_message', {
                 method: 'POST',
                 body: formData
@@ -32,8 +56,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         let messageContent = '<div class="message-content">';
                         if (data.content) {
-                            let content = escapeHtml(data.content);
-                            messageContent += `<p>${content}</p>`;
+                            // For outgoing messages, we show the original content, not the encrypted one
+                            let displayContent = escapeHtml(content);
+                            messageContent += `<p>${displayContent}</p>`;
                         }
                         if (data.file_path) {
                             let filepath = escapeHtml(data.file_path);

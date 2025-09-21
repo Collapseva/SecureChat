@@ -97,6 +97,7 @@ class User(UserMixin, db.Model):
     oauth_id = db.Column(db.String(100), nullable=True)
     avatar_path = db.Column(db.String(200), nullable=True)
     description = db.Column(db.Text, nullable=True)
+    public_key = db.Column(db.Text, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -124,9 +125,11 @@ class Message(db.Model):
     chat_id = db.Column(db.Integer, db.ForeignKey('chat.id'))
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     content = db.Column(db.Text, nullable=True)
+    content_sender = db.Column(db.Text, nullable=True)
     file_path = db.Column(db.String(200), nullable=True)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     sender = db.relationship('User', backref='messages')
+    is_encrypted = db.Column(db.Boolean, default=False)
 
 class ChatInvitation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -138,6 +141,28 @@ class ChatInvitation(db.Model):
     from_user = db.relationship('User', foreign_keys=[from_user_id], backref='sent_invitations')
     to_user = db.relationship('User', foreign_keys=[to_user_id], backref='received_invitations')
     chat = db.relationship('Chat', backref='invitations')
+
+@app.route('/keys/publish', methods=['POST'])
+@login_required
+def publish_key():
+    public_key = request.json.get('public_key')
+    if not public_key:
+        return {'error': 'Public key is required'}, 400
+    
+    user = db.session.get(User, current_user.id)
+    user.public_key = public_key
+    db.session.commit()
+    
+    return {'success': True}, 200
+
+@app.route('/keys/user/<int:user_id>')
+@login_required
+def get_user_key(user_id):
+    user = db.session.get(User, user_id)
+    if not user or not user.public_key:
+        abort(404, description="User or public key not found.")
+    return {'public_key': user.public_key}
+
 
 @app.template_filter('datetimeformat')
 def datetimeformat_filter(value, format='%d.%m.%Y %H:%M'):
@@ -407,6 +432,7 @@ def chat_view(chat_id):
     messages = chat.messages.order_by(Message.timestamp.asc()).all()
     session[f'last_read_{chat.id}_{current_user.id}'] = datetime.now(timezone.utc).replace(tzinfo=None)
   
+    other_user_id = None
     if chat.is_group:
         chat_name = chat.name if chat.name else "Групповой чат"
     else:
@@ -416,16 +442,18 @@ def chat_view(chat_id):
         for m in memberships:
             if m.user_id != current_user.id:
                 other_user = m.user
+                other_user_id = other_user.id
                 break
         chat_name = f"Чат с {other_user.username}" if other_user else "Чат"
 
-    return render_template('chat.html', chat=chat, messages=messages, chat_name=chat_name)
+    return render_template('chat.html', chat=chat, messages=messages, chat_name=chat_name, other_user_id=other_user_id)
 
 @app.route('/send_message', methods=['POST'])
 @login_required
 def ajax_send_message():
     chat_id = request.form.get('chat_id', type=int)
     content = request.form.get('message', '')
+    content_sender = request.form.get('message_sender', '')
     file = request.files.get('file')
 
     chat = db.session.get(Chat, chat_id)
@@ -444,7 +472,14 @@ def ajax_send_message():
     if not content.strip() and not file_path:
         return {'error': 'Empty message'}, 400
 
-    message = Message(chat_id=chat_id, sender_id=current_user.id, content=content.strip(), file_path=file_path)
+    message = Message(
+        chat_id=chat_id, 
+        sender_id=current_user.id, 
+        content=content.strip(), 
+        content_sender=content_sender.strip(),
+        file_path=file_path, 
+        is_encrypted=not chat.is_group
+    )
     db.session.add(message)
     db.session.commit()
 

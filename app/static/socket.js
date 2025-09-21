@@ -78,10 +78,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 newMessageDiv.classList.add('message', 'incoming');
 
                 let username = escapeHtml(data.from_username);
+                let messageText = data.content;
+
+                // Decrypt message if it's not a group chat
+                if (typeof otherUserId !== 'undefined' && otherUserId) {
+                    const decryptedText = decryptMessage(data.content);
+                    if (decryptedText) {
+                        messageText = decryptedText;
+                    } else {
+                        messageText = "[Не удалось расшифровать сообщение]";
+                    }
+                }
 
                 let messageContent = '<div class="message-content">';
                 if (data.content) {
-                    let content = escapeHtml(data.content);
+                    let content = escapeHtml(messageText);
                     messageContent += `<p>${content}</p>`;
                 }
                 if (data.file_path) {
